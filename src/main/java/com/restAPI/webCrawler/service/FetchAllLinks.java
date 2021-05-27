@@ -56,7 +56,7 @@ public class FetchAllLinks {
 		}
 
 		for (Future<ConcurrentHashMap<String, UrlDetails>> future : futures) {
-			// future.get();
+
 			List<String> domainLinks = future.get().values().stream().findFirst().get().getDomainLink().stream()
 					.distinct().collect(Collectors.toList());
 
@@ -71,13 +71,8 @@ public class FetchAllLinks {
 					fetchDetails(domainLinks);
 				}
 			}
-
 		}
-
-		// System.out.println("Completed1");
-
 		downloadExecutor.shutdown();
-
 	}
 
 	public class Downloader implements Callable<ConcurrentHashMap<String, UrlDetails>> {
@@ -99,7 +94,7 @@ public class FetchAllLinks {
 			try {
 				doc = Jsoup.connect(url).get();
 			} catch (IOException e) {
-
+				//Future Scope: Implementing the retry logic after particular interval.
 				String responseDetails = "Link Not Working";
 				visitedLink.put(url, new UrlDetails(domainLink, externalLink, responseDetails, imgDetails));
 				return visitedLink;
@@ -107,7 +102,8 @@ public class FetchAllLinks {
 			Elements imgs = doc.getElementsByTag("img");
 			Elements links = doc.select("a[href]");
 			for (Element link : links) {
-
+				//To differentiate between internal and external domain
+				// regex is better option.
 				linkValue = link.attr("href");
 				if (linkValue.startsWith("http")) {
 					externalLink.add(linkValue);
@@ -115,26 +111,19 @@ public class FetchAllLinks {
 					domainLink.add(DOMAIN_NAME);
 				} else if (linkValue.startsWith("/"))
 					domainLink.add(DOMAIN_NAME + linkValue);
-
 			}
 
 			for (Element img : imgs) {
-
 				linkValue = img.attr("src");
 				imgDesc = img.attr("alt");
 				imgDetails.add(new ImgDetails(linkValue, imgDesc));
-
 			}
 
 			String responseDetails = "Working";
 
 			visitedLink.put(url, new UrlDetails(domainLink, externalLink, responseDetails, imgDetails));
 
-			System.out.println("Crawler task completed for link: " + url);
 			return visitedLink;
-
 		}
 	}
-
 }
-
