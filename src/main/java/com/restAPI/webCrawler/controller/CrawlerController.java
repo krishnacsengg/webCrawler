@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.restAPI.webCrawler.service.WebCrawlerService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+
 @RestController
 public class CrawlerController {
 	
@@ -17,7 +19,7 @@ public class CrawlerController {
 	public WebCrawlerService webCrawlerService;
 	
 	@GetMapping(value = "{domainLink}/crawl")
-    public  String crawlDomain(@PathVariable String domainLink, @RequestParam(defaultValue = "200") Integer limit) throws InterruptedException, ExecutionException{
+    public  String crawlDomain(@Parameter(description = "domain Link to be crawled Example: [google.com,youtube.com]")@PathVariable String domainLink, @RequestParam(defaultValue = "200") Integer limit) throws InterruptedException, ExecutionException{
         String CompleteDomainURL = "https://".concat(domainLink);
 		return webCrawlerService.startCrawling(CompleteDomainURL, limit);
     }
