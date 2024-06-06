@@ -37,3 +37,66 @@ Following are the steps that could be done :
 	2. CronJob: Would have made a separate API that will flush existing data from the database and pull the latest data and store it in the database, so whenever a webservice is used it makes sure to give the latest data in response.
 	3. Retry after few minutes if the particular link is not responding.
 	4. Test cases on multiple html pages.
+
+
+
+
+
+
+
+
+
+ import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+
+public class JsonParserExample {
+
+    public static void main(String[] args) {
+        try {
+            // Read JSON from a file
+            String content = new String(Files.readAllBytes(Paths.get("path/to/your/jsonfile.json")));
+            JSONObject root = new JSONObject(content);
+
+            Set<GroupDetails> groupDetailsSet = new HashSet<>();
+
+            // Navigate to the 'dle' array
+            JSONArray dleArray = root.getJSONArray("dle");
+            for (int i = 0; i < dleArray.length(); i++) {
+                JSONObject dleNode = dleArray.getJSONObject(i);
+                GroupDetails groupDetails = new GroupDetails();
+
+                // Parse man_geo
+                JSONArray manGeoArray = dleNode.getJSONArray("man_geo");
+                for (int j = 0; j < manGeoArray.length(); j++) {
+                    JSONObject manGeoNode = manGeoArray.getJSONObject(j);
+                    groupDetails.setGeoGroupId(manGeoNode.getString("groudId"));
+                    groupDetails.setGeoGroupName(manGeoNode.getString("groupName"));
+                }
+
+                // Parse man_seg
+                JSONArray manSegArray = dleNode.getJSONArray("man_seg");
+                for (int j = 0; j < manSegArray.length(); j++) {
+                    JSONObject manSegNode = manSegArray.getJSONObject(j);
+                    groupDetails.setSegGroupId(manSegNode.getString("groudId"));
+                    groupDetails.setSegGroupName(manSegNode.getString("groupName"));
+                }
+
+                // Add the GroupDetails object to the set
+                groupDetailsSet.add(groupDetails);
+            }
+
+            // Print or use the set of GroupDetails
+            for (GroupDetails details : groupDetailsSet) {
+                System.out.println(details);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
