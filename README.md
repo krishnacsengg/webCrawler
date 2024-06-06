@@ -46,11 +46,12 @@ Following are the steps that could be done :
 
 
 
- import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.FileReader;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -58,32 +59,33 @@ public class JsonParserExample {
 
     public static void main(String[] args) {
         try {
+            Gson gson = new Gson();
+
             // Read JSON from a file
-            String content = new String(Files.readAllBytes(Paths.get("path/to/your/jsonfile.json")));
-            JSONObject root = new JSONObject(content);
+            JsonObject root = gson.fromJson(new FileReader("path/to/your/jsonfile.json"), JsonObject.class);
 
             Set<GroupDetails> groupDetailsSet = new HashSet<>();
 
             // Navigate to the 'dle' array
-            JSONArray dleArray = root.getJSONArray("dle");
-            for (int i = 0; i < dleArray.length(); i++) {
-                JSONObject dleNode = dleArray.getJSONObject(i);
+            JsonArray dleArray = root.getAsJsonArray("dle");
+            for (JsonElement dleElement : dleArray) {
+                JsonObject dleObject = dleElement.getAsJsonObject();
                 GroupDetails groupDetails = new GroupDetails();
 
                 // Parse man_geo
-                JSONArray manGeoArray = dleNode.getJSONArray("man_geo");
-                for (int j = 0; j < manGeoArray.length(); j++) {
-                    JSONObject manGeoNode = manGeoArray.getJSONObject(j);
-                    groupDetails.setGeoGroupId(manGeoNode.getString("groudId"));
-                    groupDetails.setGeoGroupName(manGeoNode.getString("groupName"));
+                JsonArray manGeoArray = dleObject.getAsJsonArray("man_geo");
+                for (JsonElement manGeoElement : manGeoArray) {
+                    JsonObject manGeoObject = manGeoElement.getAsJsonObject();
+                    groupDetails.setGeoGroupId(manGeoObject.get("groudId").getAsString());
+                    groupDetails.setGeoGroupName(manGeoObject.get("groupName").getAsString());
                 }
 
                 // Parse man_seg
-                JSONArray manSegArray = dleNode.getJSONArray("man_seg");
-                for (int j = 0; j < manSegArray.length(); j++) {
-                    JSONObject manSegNode = manSegArray.getJSONObject(j);
-                    groupDetails.setSegGroupId(manSegNode.getString("groudId"));
-                    groupDetails.setSegGroupName(manSegNode.getString("groupName"));
+                JsonArray manSegArray = dleObject.getAsJsonArray("man_seg");
+                for (JsonElement manSegElement : manSegArray) {
+                    JsonObject manSegObject = manSegElement.getAsJsonObject();
+                    groupDetails.setSegGroupId(manSegObject.get("groudId").getAsString());
+                    groupDetails.setSegGroupName(manSegObject.get("groupName").getAsString());
                 }
 
                 // Add the GroupDetails object to the set
@@ -100,3 +102,4 @@ public class JsonParserExample {
         }
     }
 }
+
