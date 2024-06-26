@@ -43,63 +43,10 @@ Following are the steps that could be done :
 
 
 
+Yesterday, I received the news that my father was hit by a bike and sustained a minor head injury. Thankfully, the injury is not severe, but I feel it is necessary for me to be with my family during this time.
 
+I am planning to travel to India tomorrow, 27th June, and I expect to return by Wednesday, 3rd July. I am aware of the upcoming 9.2 release in early July and want to assure you that I am committed to ensuring this does not impact the release schedule.
 
+I will be connecting with Aniket and the team to review and address all important items related to the EEMS and code merge that are part of upcoming release. I will make sure that everything is in place before I leave, and I will also be available for calls.
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
-import java.io.FileReader;
-import java.util.HashSet;
-import java.util.Set;
-
-public class JsonParserExample {
-
-    public static void main(String[] args) {
-        try {
-            Gson gson = new Gson();
-
-            // Read JSON from a file
-            JsonObject root = gson.fromJson(new FileReader("path/to/your/jsonfile.json"), JsonObject.class);
-
-            Set<GroupDetails> groupDetailsSet = new HashSet<>();
-
-            // Navigate to the 'dle' array
-            JsonArray dleArray = root.getAsJsonArray("dle");
-            for (JsonElement dleElement : dleArray) {
-                JsonObject dleObject = dleElement.getAsJsonObject();
-                GroupDetails groupDetails = new GroupDetails();
-
-                // Parse man_geo
-                JsonArray manGeoArray = dleObject.getAsJsonArray("man_geo");
-                for (JsonElement manGeoElement : manGeoArray) {
-                    JsonObject manGeoObject = manGeoElement.getAsJsonObject();
-                    groupDetails.setGeoGroupId(manGeoObject.get("groudId").getAsString());
-                    groupDetails.setGeoGroupName(manGeoObject.get("groupName").getAsString());
-                }
-
-                // Parse man_seg
-                JsonArray manSegArray = dleObject.getAsJsonArray("man_seg");
-                for (JsonElement manSegElement : manSegArray) {
-                    JsonObject manSegObject = manSegElement.getAsJsonObject();
-                    groupDetails.setSegGroupId(manSegObject.get("groudId").getAsString());
-                    groupDetails.setSegGroupName(manSegObject.get("groupName").getAsString());
-                }
-
-                // Add the GroupDetails object to the set
-                groupDetailsSet.add(groupDetails);
-            }
-
-            // Print or use the set of GroupDetails
-            for (GroupDetails details : groupDetailsSet) {
-                System.out.println(details);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-
+Thank you for your understanding and support during this time.
