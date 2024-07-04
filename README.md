@@ -42,11 +42,13 @@ Following are the steps that could be done :
 
 
 
+Currently, both the DMT system and our backend system have independent synchronization jobs running at 2-hour intervals. This can potentially lead to data inconsistencies, as the DMT sync job might not always run after the backend sync job has completed.
 
-Yesterday, I received the news that my father was hit by a bike and sustained a minor head injury. Thankfully, the injury is not severe, but I feel it is necessary for me to be with my family during this time.
+To address this issue, it would be ideal if the DMT system could start its synchronization job immediately after the backend (OF) sync job is completed. This ensures that the DMT cache is always up-to-date with the latest data from the backend.
 
-I am planning to travel to India tomorrow, 27th June, and I expect to return by Wednesday, 3rd July. I am aware of the upcoming 9.2 release in early July and want to assure you that I am committed to ensuring this does not impact the release schedule.
+We propose implementing a REST API endpoint in the DMT system that our backend sync job can call upon completion. This API call would trigger the DMT synchronization process, thereby maintaining consistency across our systems.
 
-I will be connecting with Aniket and the team to review and address all important items related to the EEMS and code merge that are part of upcoming release. I will make sure that everything is in place before I leave, and I will also be available for calls.
+Could your team assist with the following:
 
-Thank you for your understanding and support during this time.
+Implement a REST API endpoint in the DMT system that can be called to start the synchronization job.
+Provide the details of this API (e.g., URL, request format, authentication requirements) so that we can integrate it into our backend sync process.
