@@ -49,10 +49,11 @@ SELECT
     j.JOB_GROUP AS job_group,
     j.DESCRIPTION AS job_description,
     t.TRIGGER_STATE AS trigger_state,
-    TO_CHAR(TO_TIMESTAMP(t.NEXT_FIRE_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS next_scheduled_run,
-    TO_CHAR(TO_TIMESTAMP(t.PREV_FIRE_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS last_run_time,
-    TO_CHAR(TO_TIMESTAMP(t.START_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS start_time,
-    TO_CHAR(TO_TIMESTAMP(t.END_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS end_time,
+    -- Convert Unix timestamp (milliseconds) to timestamp and format it
+    TO_CHAR(TO_TIMESTAMP(CAST(t.NEXT_FIRE_TIME AS BIGINT) / 1000), 'YYYY-MM-DD HH24:MI:SS') AS next_scheduled_run,
+    TO_CHAR(TO_TIMESTAMP(CAST(t.PREV_FIRE_TIME AS BIGINT) / 1000), 'YYYY-MM-DD HH24:MI:SS') AS last_run_time,
+    TO_CHAR(TO_TIMESTAMP(CAST(t.START_TIME AS BIGINT) / 1000), 'YYYY-MM-DD HH24:MI:SS') AS start_time,
+    TO_CHAR(TO_TIMESTAMP(CAST(t.END_TIME AS BIGINT) / 1000), 'YYYY-MM-DD HH24:MI:SS') AS end_time,
     t.PRIORITY AS priority,
     t.TRIGGER_TYPE AS trigger_type,
     ct.CRON_EXPRESSION AS cron_expression
@@ -62,3 +63,4 @@ LEFT JOIN
     QRTZ_JOB_DETAILS j ON t.JOB_NAME = j.JOB_NAME AND t.JOB_GROUP = j.JOB_GROUP
 LEFT JOIN
     QRTZ_CRON_TRIGGERS ct ON t.TRIGGER_NAME = ct.TRIGGER_NAME AND t.TRIGGER_GROUP = ct.TRIGGER_GROUP;
+
