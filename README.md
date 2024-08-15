@@ -40,15 +40,25 @@ Following are the steps that could be done :
 
 
 
-
-
-Currently, both the DMT system and our backend system have independent synchronization jobs running at 2-hour intervals. This can potentially lead to data inconsistencies, as the DMT sync job might not always run after the backend sync job has completed.
-
-To address this issue, it would be ideal if the DMT system could start its synchronization job immediately after the backend (OF) sync job is completed. This ensures that the DMT cache is always up-to-date with the latest data from the backend.
-
-We propose implementing a REST API endpoint in the DMT system that our backend sync job can call upon completion. This API call would trigger the DMT synchronization process, thereby maintaining consistency across our systems.
-
-Could your team assist with the following:
-
-Implement a REST API endpoint in the DMT system that can be called to start the synchronization job.
-Provide the details of this API (e.g., URL, request format, authentication requirements) so that we can integrate it into our backend sync process.
+CREATE VIEW vw_scheduled_job_overview AS
+SELECT
+    t.SCHED_NAME AS scheduler_name,
+    t.TRIGGER_NAME AS trigger_name,
+    t.TRIGGER_GROUP AS trigger_group,
+    j.JOB_NAME AS job_name,
+    j.JOB_GROUP AS job_group,
+    j.DESCRIPTION AS job_description,
+    t.TRIGGER_STATE AS trigger_state,
+    TO_CHAR(TO_TIMESTAMP(t.NEXT_FIRE_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS next_scheduled_run,
+    TO_CHAR(TO_TIMESTAMP(t.PREV_FIRE_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS last_run_time,
+    TO_CHAR(TO_TIMESTAMP(t.START_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS start_time,
+    TO_CHAR(TO_TIMESTAMP(t.END_TIME / 1000), 'YYYY-MM-DD HH24:MI:SS') AS end_time,
+    t.PRIORITY AS priority,
+    t.TRIGGER_TYPE AS trigger_type,
+    ct.CRON_EXPRESSION AS cron_expression
+FROM
+    QRTZ_TRIGGERS t
+LEFT JOIN
+    QRTZ_JOB_DETAILS j ON t.JOB_NAME = j.JOB_NAME AND t.JOB_GROUP = j.JOB_GROUP
+LEFT JOIN
+    QRTZ_CRON_TRIGGERS ct ON t.TRIGGER_NAME = ct.TRIGGER_NAME AND t.TRIGGER_GROUP = ct.TRIGGER_GROUP;
