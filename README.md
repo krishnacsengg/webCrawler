@@ -49,11 +49,23 @@ SELECT
     j.JOB_GROUP AS job_group,
     j.DESCRIPTION AS job_description,
     t.TRIGGER_STATE AS trigger_state,
-    -- Adjusting for NUMBER(10,9): Convert to seconds or milliseconds depending on intent
-    TO_CHAR(TO_TIMESTAMP(t.NEXT_FIRE_TIME * 1000), 'YYYY-MM-DD HH24:MI:SS') AS next_scheduled_run,
-    TO_CHAR(TO_TIMESTAMP(t.PREV_FIRE_TIME * 1000), 'YYYY-MM-DD HH24:MI:SS') AS last_run_time,
-    TO_CHAR(TO_TIMESTAMP(t.START_TIME * 1000), 'YYYY-MM-DD HH24:MI:SS') AS start_time,
-    TO_CHAR(TO_TIMESTAMP(t.END_TIME * 1000), 'YYYY-MM-DD HH24:MI:SS') AS end_time,
+    -- Convert Unix timestamp (in milliseconds) to a readable timestamp
+    TO_CHAR(
+        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.NEXT_FIRE_TIME / 1000, 'SECOND'), 
+        'YYYY-MM-DD HH24:MI:SS'
+    ) AS next_scheduled_run,
+    TO_CHAR(
+        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.PREV_FIRE_TIME / 1000, 'SECOND'), 
+        'YYYY-MM-DD HH24:MI:SS'
+    ) AS last_run_time,
+    TO_CHAR(
+        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.START_TIME / 1000, 'SECOND'), 
+        'YYYY-MM-DD HH24:MI:SS'
+    ) AS start_time,
+    TO_CHAR(
+        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.END_TIME / 1000, 'SECOND'), 
+        'YYYY-MM-DD HH24:MI:SS'
+    ) AS end_time,
     t.PRIORITY AS priority,
     t.TRIGGER_TYPE AS trigger_type,
     ct.CRON_EXPRESSION AS cron_expression
@@ -63,5 +75,6 @@ LEFT JOIN
     QRTZ_JOB_DETAILS j ON t.JOB_NAME = j.JOB_NAME AND t.JOB_GROUP = j.JOB_GROUP
 LEFT JOIN
     QRTZ_CRON_TRIGGERS ct ON t.TRIGGER_NAME = ct.TRIGGER_NAME AND t.TRIGGER_GROUP = ct.TRIGGER_GROUP;
+
 
 
