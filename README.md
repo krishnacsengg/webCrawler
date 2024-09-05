@@ -39,42 +39,48 @@ Following are the steps that could be done :
 	4. Test cases on multiple html pages.
 
 
+Minutes of Meeting (MoM)
+Date: September 5, 2024
+Attendees:
 
-CREATE VIEW vw_scheduled_job_overview AS
-SELECT
-    t.SCHED_NAME AS scheduler_name,
-    t.TRIGGER_NAME AS trigger_name,
-    t.TRIGGER_GROUP AS trigger_group,
-    j.JOB_NAME AS job_name,
-    j.JOB_GROUP AS job_group,
-    j.DESCRIPTION AS job_description,
-    t.TRIGGER_STATE AS trigger_state,
-    -- Convert Unix timestamp (in milliseconds) to a readable timestamp
-    TO_CHAR(
-        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.NEXT_FIRE_TIME / 1000, 'SECOND'), 
-        'YYYY-MM-DD HH24:MI:SS'
-    ) AS next_scheduled_run,
-    TO_CHAR(
-        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.PREV_FIRE_TIME / 1000, 'SECOND'), 
-        'YYYY-MM-DD HH24:MI:SS'
-    ) AS last_run_time,
-    TO_CHAR(
-        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.START_TIME / 1000, 'SECOND'), 
-        'YYYY-MM-DD HH24:MI:SS'
-    ) AS start_time,
-    TO_CHAR(
-        TO_DATE('1970-01-01', 'YYYY-MM-DD') + NUMTODSINTERVAL(t.END_TIME / 1000, 'SECOND'), 
-        'YYYY-MM-DD HH24:MI:SS'
-    ) AS end_time,
-    t.PRIORITY AS priority,
-    t.TRIGGER_TYPE AS trigger_type,
-    ct.CRON_EXPRESSION AS cron_expression
-FROM
-    QRTZ_TRIGGERS t
-LEFT JOIN
-    QRTZ_JOB_DETAILS j ON t.JOB_NAME = j.JOB_NAME AND t.JOB_GROUP = j.JOB_GROUP
-LEFT JOIN
-    QRTZ_CRON_TRIGGERS ct ON t.TRIGGER_NAME = ct.TRIGGER_NAME AND t.TRIGGER_GROUP = ct.TRIGGER_GROUP;
+Bel Prasad 
+Nizam 
+Aniket
+Shailesh
 
+Agenda:
+Address the Jenkins builds being in a prolonged waiting state, which impact the retrieval of the Jenkins build ID.
+
+Suggested Solution:
+
+Bel Prasad reached out to the support team, who recommended changing the Jenkins build configuration:
+Restrict where this project will run: KUB.
+
+RLM Callback Enhancement:
+
+To ensure the usecaseId is included in the RLM callback payload, updates are required in the scripts.
+
+ scripts in both Knime and Tableau will be updated to retrieve the usecaseId from a configuration file.
+Action Items:
+OF Team:
+
+Update the Knime Configuration File Naming Convention
+The Knime cfg file name should be updated to: WFName_UsecaseID.cfg.
+Knime Team:
+
+Update PostInstall Script
+Modify the PostInstall script to parse the updated cfg file (WFName_UsecaseID.cfg), retrieve the usecaseId, and include it in the RLM callback payload.
+Tableau Team:
+
+Update PostInstall Script
+Modify the PostInstall script to parse the updated cfg file (WFName_UsecaseID.cfg), retrieve the usecaseId, and ensure it is included in the RLM callback payload.
+POC for Jenkins Callback (Triggered After Build Completion)
+
+OF Team:
+Develop a REST API endpoint to receive the Jenkins build completion callbacks.
+The API should handle a payload that includes the Jenkins build ID, usecaseId, and other relevant metadata.
+A sample payload format will be provided.
+Bel (Tableau):
+Create a Jenkins pipeline script that triggers the REST API call upon build completion. The script should send the necessary metadata (e.g., Jenkins build ID, status, usecaseId) in the payload.
 
 
