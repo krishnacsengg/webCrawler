@@ -179,3 +179,24 @@ CREATE TABLE AUDIT_LOG (
     ACCESS_DENIED   CHAR(1) DEFAULT 'N',           -- Flag to denote access denial (Y or N)
     TIMESTAMP       TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Timestamp of when the request was processed
 );
+
+@RestController
+@RequestMapping("/api/v1/files")
+public class FileDeletionController {
+
+    @Autowired
+    private FileDeletionService fileDeletionService;
+
+    @PostMapping("/delete")
+    public ResponseEntity<?> deleteFiles(@RequestBody FileDeletionRequest request) {
+        try {
+            fileDeletionService.processDeletionRequest(request);
+            return ResponseEntity.ok("Deletion request processed");
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+}
+
