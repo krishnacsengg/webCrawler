@@ -39,48 +39,6 @@ Following are the steps that could be done :
 	4. Test cases on multiple html pages.
 
 
-Minutes of Meeting (MoM)
-Date: September 5, 2024
-Attendees:
 
-Bel Prasad 
-Nizam 
-Aniket
-Shailesh
-
-Agenda:
-Address the Jenkins builds being in a prolonged waiting state, which impact the retrieval of the Jenkins build ID.
-
-Suggested Solution:
-
-Bel Prasad reached out to the support team, who recommended changing the Jenkins build configuration:
-Restrict where this project will run: KUB.
-
-RLM Callback Enhancement:
-
-To ensure the usecaseId is included in the RLM callback payload, updates are required in the scripts.
-
- scripts in both Knime and Tableau will be updated to retrieve the usecaseId from a configuration file.
-Action Items:
-OF Team:
-
-Update the Knime Configuration File Naming Convention
-The Knime cfg file name should be updated to: WFName_UsecaseID.cfg.
-Knime Team:
-
-Update PostInstall Script
-Modify the PostInstall script to parse the updated cfg file (WFName_UsecaseID.cfg), retrieve the usecaseId, and include it in the RLM callback payload.
-Tableau Team:
-
-Update PostInstall Script
-Modify the PostInstall script to parse the updated cfg file (WFName_UsecaseID.cfg), retrieve the usecaseId, and ensure it is included in the RLM callback payload.
-POC for Jenkins Callback (Triggered After Build Completion)
-
-OF Team:
-Develop a REST API endpoint to receive the Jenkins build completion callbacks.
-The API should handle a payload that includes the Jenkins build ID, usecaseId, and other relevant metadata.
-A sample payload format will be provided.
-Bel (Tableau):
-Create a Jenkins pipeline script that triggers the REST API call upon build completion. The script should send the necessary metadata (e.g., Jenkins build ID, status, usecaseId) in the payload.
 
 
