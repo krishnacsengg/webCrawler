@@ -1,4 +1,89 @@
-System.getenv
+package com.example.service;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.example.model.FailureDetails;
+import com.example.service.AccessValidationService;
+import com.example.service.VulnerabilityCheckService;
+import com.example.service.AuditService;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class FileDeletionService {
+
+    @Autowired
+    private AccessValidationService accessValidationService;
+
+    @Autowired
+    private VulnerabilityCheckService vulnerabilityCheckService;
+
+    @Autowired
+    private AuditService auditService;
+
+    public void processDeletionRequest(String payload) throws AccessDeniedException {
+        // Step 1: Parse the payload
+        JSONObject request = new JSONObject(payload);
+        String filePath = request.getString("filePath");
+        JSONArray fileDetailsArray = request.getJSONArray("fileDetails");
+        int busProcId = request.getInt("busProcId");
+        String soeid = request.getString("soeid");
+
+        List<String> fileDetails = new ArrayList<>();
+        for (int i = 0; i < fileDetailsArray.length(); i++) {
+            fileDetails.add(fileDetailsArray.getString(i));
+        }
+
+        // Step 2: Access check
+        boolean hasAccess = accessValidationService.checkUserAccess(soeid, busProcId);
+        if (!hasAccess) {
+            auditService.logAccessDenied(payload, busProcId, soeid);
+            throw new AccessDeniedException("User does not have access to busProcId: " + busProcId);
+        }
+
+        // Step 3: Vulnerability check
+        List<File> validFiles = vulnerabilityCheckService.checkFilesForVulnerability(fileDetails);
+        List<FailureDetails> failureFiles = new ArrayList<>();
+
+        // Add unsafe files to failure list with appropriate error message
+        fileDetails.stream()
+            .filter(file -> validFiles.stream().noneMatch(vf -> vf.getName().equals(file)))
+            .forEach(unsafeFile -> failureFiles.add(new FailureDetails(unsafeFile, "Vulnerability check failed")));
+
+        // Step 4: Process file deletions
+        List<String> successFiles = new ArrayList<>();
+        for (File file : validFiles) {
+            try {
+                boolean isDeleted = deleteFile(file);
+                if (isDeleted) {
+                    successFiles.add(file.getName());
+                } else {
+                    failureFiles.add(new FailureDetails(file.getName(), "File could not be deleted"));
+                }
+            } catch (IOException | SecurityException e) {
+                failureFiles.add(new FailureDetails(file.getName(), e.getMessage()));
+            }
+        }
+
+        // Step 5: Log the results
+        auditService.logDeletionAudit(payload, filePath, busProcId, soeid, successFiles, failureFiles);
+    }
+
+    private boolean deleteFile(File file) throws IOException {
+        if (file.exists() && file.isFile()) {
+            return file.delete();
+        } else {
+            throw new FileNotFoundException("File not found: " + file.getName());
+        }
+    }
+}
+
 
 
 package com.example.service;
