@@ -51,10 +51,12 @@ public class FileDeletionService {
         List<File> validFiles = vulnerabilityCheckService.checkFilesForVulnerability(fileDetails);
         List<FailureDetails> failureFiles = new ArrayList<>();
 
-        // Add unsafe files to failure list with appropriate error message
-        fileDetails.stream()
-            .filter(file -> validFiles.stream().noneMatch(vf -> vf.getName().equals(file)))
-            .forEach(unsafeFile -> failureFiles.add(new FailureDetails(unsafeFile, "Vulnerability check failed")));
+       fileDetails.stream() 
+    .filter(file -> validFiles.stream()
+        .noneMatch(vf -> vf.getName().equals(file)))  // Compare only the file names (without paths)
+    .forEach(unsafeFile -> 
+        failureFiles.add(new FailureDetails(unsafeFile, "Vulnerability check failed")));  // Add the unsafe files to the failure list
+
 
         // Step 4: Process file deletions
         List<String> successFiles = new ArrayList<>();
