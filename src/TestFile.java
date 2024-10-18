@@ -1,3 +1,9 @@
+SELECT groupName
+FROM groups
+START WITH groupName = 'subFinance'
+CONNECT BY PRIOR parentId = groupId
+ORDER SIBLINGS BY groupId;
+
 package com.example.service;
 
 import org.json.JSONArray;
