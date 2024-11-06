@@ -2,21 +2,11 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
-public class AESWithoutIV {
-    private static final String KEY = "0123456789abcdef"; // 16-byte key for AES-128
-
-    public static String encrypt(String data) throws Exception {
+public class AES256DecryptWithoutIV {
+    public static String decrypt(String encryptedData, String key) throws Exception {
+        // Use AES/ECB/PKCS5Padding for decryption without an IV
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
-
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-        byte[] encrypted = cipher.doFinal(data.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encrypted);
-    }
-
-    public static String decrypt(String encryptedData) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
+        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec);
         byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
@@ -24,13 +14,11 @@ public class AESWithoutIV {
     }
 
     public static void main(String[] args) throws Exception {
-        String originalText = "Hello, Secure World!";
-        String encryptedText = encrypt(originalText);
-        String decryptedText = decrypt(encryptedText);
+        String key = "your-32-character-key-here";  // 32-character key for AES-256
+        String encryptedData = "your-encrypted-data-here";  // Base64 encoded
 
-        System.out.println("Original: " + originalText);
-        System.out.println("Encrypted: " + encryptedText);
-        System.out.println("Decrypted: " + decryptedText);
+        String decryptedText = decrypt(encryptedData, key);
+        System.out.println("Decrypted Text: " + decryptedText);
     }
 }
 
