@@ -1,35 +1,77 @@
-SET SERVEROUTPUT ON;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 
-DECLARE
-    v_search_word VARCHAR2(100) := ''; -- Replace with the word you want to search for
-    v_sql         CLOB;
-    v_count       INTEGER;
-BEGIN
-    FOR t IN (SELECT table_name, column_name
-              FROM all_tab_columns
-              WHERE owner = 'PBIRS' -- Replace with your schema name
-              AND data_type = 'VARCHAR2') 
-    LOOP
-        BEGIN
-            -- Build the query to count occurrences
-            v_sql := 'SELECT COUNT(*) FROM ' || t.table_name ||
-                     ' WHERE ' || t.column_name || ' LIKE ''%' || v_search_word || '%''';
-            
-            -- Execute the query and store the count result in v_count
-            EXECUTE IMMEDIATE v_sql INTO v_count;
-            
-            -- Print the result if occurrences are found
-            IF v_count > 0 THEN
-                DBMS_OUTPUT.PUT_LINE('Table: ' || t.table_name || 
-                                     ', Column: ' || t.column_name || 
-                                     ', Occurrences: ' || v_count);
-            END IF;
-        EXCEPTION
-            -- Catch any errors, such as ORA-00942, and continue with the next iteration
-            WHEN OTHERS THEN
-                DBMS_OUTPUT.PUT_LINE('Skipping table: ' || t.table_name || 
-                                     ' due to error: ' || SQLERRM);
-        END;
-    END LOOP;
-END;
-/
+public class AESWithoutIV {
+    private static final String KEY = "0123456789abcdef"; // 16-byte key for AES-128
+
+    public static String encrypt(String data) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
+
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        byte[] encrypted = cipher.doFinal(data.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    public static String decrypt(String encryptedData) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
+
+        cipher.init(Cipher.DECRYPT_MODE, keySpec);
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+        return new String(original, "UTF-8");
+    }
+
+    public static void main(String[] args) throws Exception {
+        String originalText = "Hello, Secure World!";
+        String encryptedText = encrypt(originalText);
+        String decryptedText = decrypt(encryptedText);
+
+        System.out.println("Original: " + originalText);
+        System.out.println("Encrypted: " + encryptedText);
+        System.out.println("Decrypted: " + decryptedText);
+    }
+}
+
+
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import java.util.Base64;
+
+public class AESWithIV {
+    private static final String KEY = "0123456789abcdef"; // 16-byte key for AES-128
+    private static final String IV = "abcdef9876543210";  // 16-byte IV
+
+    public static String encrypt(String data) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
+
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+        byte[] encrypted = cipher.doFinal(data.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    public static String decrypt(String encryptedData) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
+
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+        return new String(original, "UTF-8");
+    }
+
+    public static void main(String[] args) throws Exception {
+        String originalText = "Hello, Secure World!";
+        String encryptedText = encrypt(originalText);
+        String decryptedText = decrypt(encryptedText);
+
+        System.out.println("Original: " + originalText);
+        System.out.println("Encrypted: " + encryptedText);
+        System.out.println("Decrypted: " + decryptedText);
+    }
+}
