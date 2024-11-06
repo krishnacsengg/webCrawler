@@ -1,75 +1,50 @@
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.SecureRandom;
 import java.util.Base64;
+import java.nio.ByteBuffer;
 
-public class AES256EncryptionExample {
-
-    // Method to generate a 32-byte (256-bit) AES key
-    public static String generateAES256Key() {
-        byte[] key = new byte[32]; // 32 bytes for 256-bit AES
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(key);
-        return Base64.getEncoder().encodeToString(key);
-    }
-
-    // Method to encrypt text using AES-256
-    public static String encrypt(String plainText, String base64Key) throws Exception {
-        // Decode the Base64 key
+public class AES256DecryptWithIV {
+    public static String decrypt(String encryptedData, String base64Key) throws Exception {
+        // Decode the Base64 key and encrypted data
         byte[] decodedKey = Base64.getDecoder().decode(base64Key);
-        
-        // Create the AES key specification
+        byte[] decodedEncryptedData = Base64.getDecoder().decode(encryptedData);
+
+        // Extract IV from the first 16 bytes of the decoded data
+        ByteBuffer byteBuffer = ByteBuffer.wrap(decodedEncryptedData);
+        byte[] iv = new byte[16];
+        byteBuffer.get(iv);
+
+        // Extract the actual encrypted data
+        byte[] encryptedBytes = new byte[byteBuffer.remaining()];
+        byteBuffer.get(encryptedBytes);
+
+        // Create key and IV specifications
         SecretKeySpec keySpec = new SecretKeySpec(decodedKey, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
-        // Initialize the Cipher for encryption
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        // Initialize Cipher with AES/CBC/PKCS5Padding
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 
-        // Encrypt the plain text
-        byte[] encryptedBytes = cipher.doFinal(plainText.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encryptedBytes);
-    }
-
-    // Method to decrypt text using AES-256
-    public static String decrypt(String encryptedText, String base64Key) throws Exception {
-        // Decode the Base64 key
-        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
-
-        // Create the AES key specification
-        SecretKeySpec keySpec = new SecretKeySpec(decodedKey, "AES");
-
-        // Initialize the Cipher for decryption
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, keySpec);
-
-        // Decrypt the encrypted text
-        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
+        // Decrypt the data
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
         return new String(decryptedBytes, "UTF-8");
     }
 
     public static void main(String[] args) {
         try {
-            // Generate a random AES-256 key
-            String aesKey = generateAES256Key();
-            System.out.println("Generated AES-256 Key: " + aesKey);
+            String base64Key = "YOUR_BASE64_KEY"; // Replace with your actual Base64-encoded AES-256 key
+            String encryptedData = "YOUR_ENCRYPTED_DATA"; // Replace with the encrypted text
 
-            // Sample text to encrypt
-            String originalText = "Hello, this is a secret message!";
-            System.out.println("Original Text: " + originalText);
-
-            // Encrypt the text
-            String encryptedText = encrypt(originalText, aesKey);
-            System.out.println("Encrypted Text: " + encryptedText);
-
-            // Decrypt the text
-            String decryptedText = decrypt(encryptedText, aesKey);
+            String decryptedText = decrypt(encryptedData, base64Key);
             System.out.println("Decrypted Text: " + decryptedText);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
+
 
 
 
