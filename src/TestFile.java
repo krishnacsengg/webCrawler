@@ -1,26 +1,76 @@
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
 import java.util.Base64;
 
-public class AES256DecryptWithoutIV {
-    public static String decrypt(String encryptedData, String key) throws Exception {
-        // Use AES/ECB/PKCS5Padding for decryption without an IV
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
-        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
+public class AES256EncryptionExample {
 
-        cipher.init(Cipher.DECRYPT_MODE, keySpec);
-        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
-        return new String(original, "UTF-8");
+    // Method to generate a 32-byte (256-bit) AES key
+    public static String generateAES256Key() {
+        byte[] key = new byte[32]; // 32 bytes for 256-bit AES
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(key);
+        return Base64.getEncoder().encodeToString(key);
     }
 
-    public static void main(String[] args) throws Exception {
-        String key = "your-32-character-key-here";  // 32-character key for AES-256
-        String encryptedData = "your-encrypted-data-here";  // Base64 encoded
+    // Method to encrypt text using AES-256
+    public static String encrypt(String plainText, String base64Key) throws Exception {
+        // Decode the Base64 key
+        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
+        
+        // Create the AES key specification
+        SecretKeySpec keySpec = new SecretKeySpec(decodedKey, "AES");
 
-        String decryptedText = decrypt(encryptedData, key);
-        System.out.println("Decrypted Text: " + decryptedText);
+        // Initialize the Cipher for encryption
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+
+        // Encrypt the plain text
+        byte[] encryptedBytes = cipher.doFinal(plainText.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    // Method to decrypt text using AES-256
+    public static String decrypt(String encryptedText, String base64Key) throws Exception {
+        // Decode the Base64 key
+        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
+
+        // Create the AES key specification
+        SecretKeySpec keySpec = new SecretKeySpec(decodedKey, "AES");
+
+        // Initialize the Cipher for decryption
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec);
+
+        // Decrypt the encrypted text
+        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
+        return new String(decryptedBytes, "UTF-8");
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Generate a random AES-256 key
+            String aesKey = generateAES256Key();
+            System.out.println("Generated AES-256 Key: " + aesKey);
+
+            // Sample text to encrypt
+            String originalText = "Hello, this is a secret message!";
+            System.out.println("Original Text: " + originalText);
+
+            // Encrypt the text
+            String encryptedText = encrypt(originalText, aesKey);
+            System.out.println("Encrypted Text: " + encryptedText);
+
+            // Decrypt the text
+            String decryptedText = decrypt(encryptedText, aesKey);
+            System.out.println("Decrypted Text: " + decryptedText);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
+
 
 
 
