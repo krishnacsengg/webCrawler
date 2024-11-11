@@ -1,90 +1,148 @@
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
-import java.nio.ByteBuffer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-public class AES256DecryptWithIV {
-    public static String decrypt(String encryptedData, String base64Key) throws Exception {
-        // Decode the Base64 key and encrypted data
-        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
-        byte[] decodedEncryptedData = Base64.getDecoder().decode(encryptedData);
+import java.util.List;
+import java.util.Map;
 
-        // Extract IV from the first 16 bytes of the decoded data
-        ByteBuffer byteBuffer = ByteBuffer.wrap(decodedEncryptedData);
-        byte[] iv = new byte[16];
-        byteBuffer.get(iv);
+@RestController
+@RequestMapping("/api/audit")
+public class AuditFileManagerController {
 
-        // Extract the actual encrypted data
-        byte[] encryptedBytes = new byte[byteBuffer.remaining()];
-        byteBuffer.get(encryptedBytes);
+    @Autowired
+    private AuditFileManagerService service;
 
-        // Create key and IV specifications
-        SecretKeySpec keySpec = new SecretKeySpec(decodedKey, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+    @GetMapping("/file-manager-requests")
+    public ResponseEntity<List<Map<String, Object>>> getAuditFileManagerRequests(
+            @RequestParam("bus_proc_id") int busProcId,
+            @RequestParam(value = "fileName", required = false) String fileName,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "actionType", required = false) String actionType,
+            @RequestParam(value = "actionOwner", required = false) String actionOwner) {
 
-        // Initialize Cipher with AES/CBC/PKCS5Padding
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+        String requestPayload = String.format("bus_proc_id=%d&fileName=%s&page=%s&size=%s",
+                busProcId, fileName, page, size);
 
-        // Decrypt the data
-        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-        return new String(decryptedBytes, "UTF-8");
-    }
-
-    public static void main(String[] args) {
         try {
-            String base64Key = "YOUR_BASE64_KEY"; // Replace with your actual Base64-encoded AES-256 key
-            String encryptedData = "YOUR_ENCRYPTED_DATA"; // Replace with the encrypted text
+            List<Map<String, Object>> result = service.getAuditRecords(busProcId, fileName, page, size, actionType, actionOwner);
+            service.logAuditEntry(busProcId, "FetchAuditDetails", requestPayload, 200, result.size());
+            return ResponseEntity.ok(result);
 
-            String decryptedText = decrypt(encryptedData, base64Key);
-            System.out.println("Decrypted Text: " + decryptedText);
         } catch (Exception e) {
+            service.logAuditEntry(busProcId, "FetchAuditDetails", requestPayload, 500, 0);
             e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
     }
 }
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@Service
+public class AuditFileManagerService {
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.spec.IvParameterSpec;
-import java.util.Base64;
+    @Autowired
+    private AuditFileManagerRequestMapper mapper;
 
-public class AESWithIV {
-    private static final String KEY = "0123456789abcdef"; // 16-byte key for AES-128
-    private static final String IV = "abcdef9876543210";  // 16-byte IV
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    public static String encrypt(String data) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
-
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-        byte[] encrypted = cipher.doFinal(data.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encrypted);
+    public void logAuditEntry(int busProcId, String actionType, String requestPayload, int status, int numberOfRecords) {
+        String responseStatus = String.format("{\"ResponseStatus\": %d, \"NumberOfRecord\": %d}", status, numberOfRecords);
+        mapper.insertAuditRequest(busProcId, actionType, requestPayload, responseStatus);
     }
 
-    public static String decrypt(String encryptedData) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
+    public List<Map<String, Object>> getAuditRecords(int busProcId, String fileName, Integer page, Integer size, String actionType, String actionOwner) {
+        List<AuditFileManagerRequest> records = mapper.findAuditFileManagerRequests(busProcId, fileName, page, size, actionType, actionOwner);
 
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
-        return new String(original, "UTF-8");
+        return records.stream()
+                .flatMap(record -> parseAndFilterFiles(record, fileName).stream())
+                .collect(Collectors.toList());
     }
 
-    public static void main(String[] args) throws Exception {
-        String originalText = "Hello, Secure World!";
-        String encryptedText = encrypt(originalText);
-        String decryptedText = decrypt(encryptedText);
+    private List<Map<String, Object>> parseAndFilterFiles(AuditFileManagerRequest record, String fileName) {
+        List<Map<String, Object>> fileRecords = new ArrayList<>();
+        
+        try {
+            String[] files = objectMapper.readValue(record.getSuccessFiles(), String[].class);
+            
+            for (String file : files) {
+                if (fileName == null || file.contains(fileName)) {
+                    fileRecords.add(createFileRecord(file.trim(), record));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return fileRecords;
+    }
 
-        System.out.println("Original: " + originalText);
-        System.out.println("Encrypted: " + encryptedText);
-        System.out.println("Decrypted: " + decryptedText);
+    private Map<String, Object> createFileRecord(String fileName, AuditFileManagerRequest record) {
+        return Map.of(
+                "FileName", fileName,
+                "ActionOwner", record.getUserId(),
+                "ActionTime", record.getTimestamp(),
+                "ActionType", record.getActionType()
+        );
     }
 }
+
+
+
+@Mapper
+public interface AuditFileManagerRequestMapper {
+
+    List<AuditFileManagerRequest> findAuditFileManagerRequests(
+            @Param("busProcId") int busProcId,
+            @Param("fileName") String fileName,
+            @Param("page") Integer page,
+            @Param("size") Integer size,
+            @Param("actionType") String actionType,
+            @Param("actionOwner") String actionOwner
+    );
+
+    void insertAuditRequest(@Param("busProcId") int busProcId,
+                            @Param("actionType") String actionType,
+                            @Param("requestPayload") String requestPayload,
+                            @Param("responseStatus") String responseStatus);
+}
+
+
+<insert id="insertAuditRequest">
+    INSERT INTO AUDIT_FILEMANAGER_REQUEST (BUS_PROC_ID, ACTION_TYPE, REQUEST_PAYLOAD, RESPONSE_STATUS)
+    VALUES (#{busProcId}, #{actionType}, #{requestPayload}, #{responseStatus})
+</insert>
+
+
+    <select id="findAuditFileManagerRequests" resultType="com.example.demo.model.AuditFileManagerRequest">
+        SELECT *
+        FROM AUDIT_FILEMANAGER_REQUEST
+        WHERE PROC_ID = #{busProcId}
+          AND SUCCESS_FILES != '[]'
+          <if test="fileName != null">
+              AND SUCCESS_FILES LIKE CONCAT('%', #{fileName}, '%')
+          </if>
+          <if test="actionType != null">
+              AND ACTION_TYPE = #{actionType}
+          </if>
+          <if test="actionOwner != null">
+              AND USERID = #{actionOwner}
+          </if>
+        ORDER BY TIMESTAMP DESC
+        <if test="page != null and size != null">
+            LIMIT #{size} OFFSET #{page} * #{size}
+        </if>
+    </select>
+
+    
