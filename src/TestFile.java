@@ -1,24 +1,18 @@
-TO_CHAR(created_at, 'MM-DD-YYYY HH:MI:SS AM') AS created_at_12hr
+long totalRecords = auditFileManagerService.countRequests(bus_proc_id, fileName);
+    int totalPages = (int) Math.ceil((double) totalRecords / size);
 
 
-  <insert id="insertUserActions" parameterType="map">
-        INSERT INTO user_actions (user_id, action_type, file_name)
-        VALUES
-        <foreach collection="fileNames" item="fileName" separator=",">
-            (#{userID}, #{actionType}, #{fileName})
-        </foreach>
-    </insert>
-public List<Map<String, Object>> getAuditRecords(int busProcId, String fileName, Integer page, Integer size, String actionType, String actionOwner) {
-    List<AuditFileManagerRequest> records = mapper.findAuditFileManagerRequests(busProcId, fileName, page, size, actionType, actionOwner);
-
-    return records.stream()
-            .map(record -> {
-                Map<String, Object> fileRecord = new HashMap<>();
-                fileRecord.put("FileName", record.getFileName());
-                fileRecord.put("ActionOwner", record.getUserId());
-                fileRecord.put("ActionTime", record.getTimestamp());
-                fileRecord.put("ActionType", record.getActionType());
-                return fileRecord;
-            })
-            .collect(Collectors.toList());
-}
+<select id="countAuditFileManagerRequests" resultType="long">
+    SELECT COUNT(*)
+    FROM AUDIT_FILEMANAGER_REQUEST
+    WHERE BUS_PROC_ID = #{busProcId}
+    <if test="fileName != null">
+        AND SUCCESS_FILES LIKE CONCAT('%', #{fileName}, '%')
+    </if>
+    <if test="actionType != null">
+        AND ACTION_TYPE = #{actionType}
+    </if>
+    <if test="actionOwner != null">
+        AND USER_ID = #{actionOwner}
+    </if>
+</select>
