@@ -1,18 +1,8 @@
-long totalRecords = auditFileManagerService.countRequests(bus_proc_id, fileName);
-    int totalPages = (int) Math.ceil((double) totalRecords / size);
+SET LONG 10000;
+SET PAGESIZE 500;
+SET LINESIZE 200;
 
-
-<select id="countAuditFileManagerRequests" resultType="long">
-    SELECT COUNT(*)
-    FROM AUDIT_FILEMANAGER_REQUEST
-    WHERE BUS_PROC_ID = #{busProcId}
-    <if test="fileName != null">
-        AND SUCCESS_FILES LIKE CONCAT('%', #{fileName}, '%')
-    </if>
-    <if test="actionType != null">
-        AND ACTION_TYPE = #{actionType}
-    </if>
-    <if test="actionOwner != null">
-        AND USER_ID = #{actionOwner}
-    </if>
-</select>
+-- Generate DDL for all tables
+SELECT DBMS_METADATA.GET_DDL('TABLE', table_name, 'ADMIN_USER') AS ddl_statement
+FROM all_tables
+WHERE owner = 'ADMIN_USER';
