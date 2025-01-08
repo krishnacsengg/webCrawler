@@ -18,6 +18,28 @@ public class TarFileReader {
     }
 }
 
+public static File extractTzFile(File gzFile, String tempDir) throws IOException {
+        // Create a temporary file in the specified directory
+        File extractedFile = new File(tempDir, gzFile.getName().replace(".gz", ""));
+        
+        try (FileInputStream fis = new FileInputStream(gzFile);
+             GZIPInputStream gis = new GZIPInputStream(fis);
+             FileOutputStream fos = new FileOutputStream(extractedFile)) {
+             
+            // Buffer to hold data during decompression
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = gis.read(buffer)) != -1) {
+                fos.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            throw new IOException("Failed to extract the GZIP file: " + gzFile.getName(), e);
+        }
+
+        return extractedFile;
+    }
+
+
  ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
 
