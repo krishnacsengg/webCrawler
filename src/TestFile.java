@@ -187,5 +187,67 @@ public class ResultService {
     }
 }
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+public class FileProcessor {
+
+    public void processGzFile(String gzFilePath, String outputFilePath) {
+        // Step 1: Extract the file from the .gz archive
+        extractGzFile(gzFilePath, outputFilePath);
+
+        // Step 2: Process the extracted file
+        processJsonFile(outputFilePath);
+    }
+
+    private void extractGzFile(String gzFilePath, String outputFilePath) {
+        try (GZIPInputStream gzipInputStream = new GZIPInputStream(new FileInputStream(gzFilePath));
+             FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
+
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = gzipInputStream.read(buffer)) > 0) {
+                fileOutputStream.write(buffer, 0, bytesRead);
+            }
+            System.out.println("File extracted to: " + outputFilePath);
+
+        } catch (IOException e) {
+            System.err.println("Error extracting the file: " + e.getMessage());
+        }
+    }
+
+    private void processJsonFile(String filePath) {
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(filePath))) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new JavaTimeModule()); // Handle Java 8 Date-Time types
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Deserialize JSON line into a list of ManagedGeography objects
+                List<ManagedGeography> geographies =
+                    mapper.readValue(line, mapper.getTypeFactory().constructCollectionType(List.class, ManagedGeography.class));
+
+                // Save the objects to the database
+                saveManagedGeographies(geographies);
+            }
+        } catch (Exception e) {
+            System.err.println("Error processing the JSON file: " + e.getMessage());
+        }
+    }
+
+    private void saveManagedGeographies(List<ManagedGeography> geographies) {
+        // Batch insert logic using MyBatis
+        managedGeographyMapper.insertManagedGeographies(geographies); // Assuming batch insert
+    }
+}
+
+
+
 
 
