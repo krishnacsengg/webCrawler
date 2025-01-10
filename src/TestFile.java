@@ -248,6 +248,67 @@ public class FileProcessor {
 }
 
 
+import org.apache.ibatis.type.BaseTypeHandler;
+import org.apache.ibatis.type.JdbcType;
+
+import java.sql.*;
+import java.time.OffsetDateTime;
+
+public class OffsetDateTimeTypeHandler extends BaseTypeHandler<OffsetDateTime> {
+
+    @Override
+    public void setNonNullParameter(PreparedStatement ps, int i, OffsetDateTime parameter, JdbcType jdbcType) throws SQLException {
+        ps.setObject(i, parameter); // JDBC supports OffsetDateTime directly
+    }
+
+    @Override
+    public OffsetDateTime getNullableResult(ResultSet rs, String columnName) throws SQLException {
+        Timestamp timestamp = rs.getTimestamp(columnName);
+        return timestamp != null ? timestamp.toInstant().atOffset(OffsetDateTime.now().getOffset()) : null;
+    }
+
+    @Override
+    public OffsetDateTime getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
+        Timestamp timestamp = rs.getTimestamp(columnIndex);
+        return timestamp != null ? timestamp.toInstant().atOffset(OffsetDateTime.now().getOffset()) : null;
+    }
+
+    @Override
+    public OffsetDateTime getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
+        Timestamp timestamp = cs.getTimestamp(columnIndex);
+        return timestamp != null ? timestamp.toInstant().atOffset(OffsetDateTime.now().getOffset()) : null;
+    }
+}
+
+
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.type.TypeHandlerRegistry;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class MyBatisConfig {
+
+    @Bean
+    public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
+        SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
+        factoryBean.setDataSource(dataSource);
+
+        SqlSessionFactory sqlSessionFactory = factoryBean.getObject();
+
+        // Register the custom OffsetDateTime TypeHandler
+        TypeHandlerRegistry typeHandlerRegistry = sqlSessionFactory.getConfiguration().getTypeHandlerRegistry();
+        typeHandlerRegistry.register(OffsetDateTime.class, OffsetDateTimeTypeHandler.class);
+
+        return sqlSessionFactory;
+    }
+}
+
+
+
 
 
 
