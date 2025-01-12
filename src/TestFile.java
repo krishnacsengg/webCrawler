@@ -308,6 +308,14 @@ public class MyBatisConfig {
 }
 
 
+public String getEffectiveDate() {
+        if (effectiveDate == null) {
+            return null;
+        }
+        return effectiveDate.atZoneSameInstant(ZoneOffset.UTC).format(UTC_FORMATTER);
+    }
+
+
 
 
 
