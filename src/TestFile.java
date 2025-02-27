@@ -1,22 +1,26 @@
-public void copyFile(String filename, String inputPath, String parentPath, String runIDPath) throws IOException {
-        // Build the source file path from the inputPath and filename.
-        Path sourceFile = Path.of(inputPath, filename);
-        if (!Files.exists(sourceFile)) {
-            throw new IOException("Source file does not exist: " + sourceFile);
-        }
+String filePath = "/data/files";
+        List<String> fileNames = Arrays.asList("file1.txt", "file2.txt", "file3.txt");
 
-        // Compute the relative path from the parentPath to the source file.
-        // This gives the folder structure (e.g., Input/data/Setting/config.xml)
-        Path relativePath = Path.of(parentPath).relativize(sourceFile);
+        // Call the batch update method
+        service.updateFileStatusToDeletedBatch(filePath, fileNames);
 
-        // Build the destination file path by appending the relative path to the runIDPath.
-        Path destinationFile = Path.of(runIDPath, relativePath.toString());
 
-        // Create any missing directories in the destination path.
-        Files.createDirectories(destinationFile.getParent());
+<update id="updateFileStatusToDeletedBatch" parameterType="map">
+  UPDATE AUDIT_RUNID_ARCHIVAL
+  SET STATUS = 'Deleted'
+  WHERE FILE_PATH = #{filePath} 
+  AND FILE_NAME IN 
+  <foreach collection="fileNames" item="fileName" open="(" separator="," close=")">
+    #{fileName}
+  </foreach>
+</update>
 
-        // Copy the source file to the destination, replacing any existing file.
-        Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING);
 
-        System.out.println("File copied successfully from " + sourceFile + " to " + destinationFile);
-    }
+
+
+
+
+
+
+
+
