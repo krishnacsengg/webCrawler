@@ -1,16 +1,7 @@
-{
-  dataSources(filter: { name: "YourDataSourceName" }) {
-    id
-    name
-    projectName
-    projectHierarchy {
-      name
-    }
-  }
-}
+# Install UTF-8 support
+RUN yum install -y glibc-langpack-en
 
-
-curl -X POST 'https://<your-tableau-server>/api/metadata/graphql' \
--H 'Content-Type: application/json' \
--H 'X-Tableau-Auth: <your-auth-token>' \
--d '{"query": "{ dataSources(filter: { name: \"YourDataSourceName\" }) { id name projectName projectHierarchy { name } } }"}'
+# Set system-wide UTF-8 locale
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL=en_US.UTF-8
